@@ -1,0 +1,21 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: make
+      run: |
+        cd bgft
+        make
+
+    - name: Push artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: bgft\*
