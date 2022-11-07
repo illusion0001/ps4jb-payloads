@@ -23,4 +23,5 @@ jobs:
     - name: Push artifact
       uses: actions/upload-artifact@v3
       with:
+        name: bgft_sender.exe
         path: bgft/*.exe
