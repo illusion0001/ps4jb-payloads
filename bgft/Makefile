@@ -7,7 +7,7 @@ clean:
 	cd ../lib; make
 
 payload.elf: ../lib/lib.a main.c
-	clang -g -mcmodel=small -isystem ../freebsd-headers -nostdinc -nostdlib -fno-stack-protector -static ../lib/lib.a main.c download.c ps4-libjbc/*.c -Wl,-gc-sections -o payload.elf -fPIE -ffreestanding
+	gcc -g -mcmodel=small -isystem ../freebsd-headers -nostdinc -nostdlib -fno-stack-protector -static ../lib/lib.a main.c download.c ps4-libjbc/*.c -Wl,-gc-sections -o payload.elf -fPIE -ffreestanding
 
 payload.bin: payload.elf
 	objcopy payload.elf --only-section .text --only-section .data --only-section .bss --only-section .rodata -O binary payload.bin
