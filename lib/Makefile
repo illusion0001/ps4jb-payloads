@@ -4,7 +4,7 @@ clean:
 	rm -f lib.a *.o syscalls.asm
 
 dl.o: dl.c
-	gcc -target x86_64-pc-linux-gnu -c -isystem ../freebsd-headers -nostdinc -fno-stack-protector dl.c -o dl.o -fPIE -ffreestanding
+	gcc --target x86_64-pc-linux-gnu -c -isystem ../freebsd-headers -nostdinc -fno-stack-protector dl.c -o dl.o -fPIE -ffreestanding
 
 crt.o: crt.asm
 	yasm -f elf64 crt.asm
