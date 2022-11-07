@@ -12,6 +12,7 @@ jobs:
 
     - name: make
       run: |
+        choco install yasm
         cd bgft
         make
 
