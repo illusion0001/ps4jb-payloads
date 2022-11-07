@@ -10,11 +10,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: setup
+      run: choco install yasm
+
     - name: make
       run: |
-        choco install yasm
         cd bgft
-        make
+        make sender.exe
 
     - name: Push artifact
       uses: actions/upload-artifact@v3
