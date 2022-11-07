@@ -4,7 +4,7 @@ on: push
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
 
     - name: Checkout
@@ -13,7 +13,7 @@ jobs:
         submodules: recursive
 
     - name: setup
-      run: sudo apt install yasm
+      run: choco install yasm
 
     - name: make
       run: |
