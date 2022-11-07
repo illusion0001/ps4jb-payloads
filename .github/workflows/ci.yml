@@ -15,13 +15,6 @@ jobs:
     - name: Setup
       run: sudo apt install yasm mingw-w64
 
-    - name: Setup Environment
-      run: |
-        git clone https://github.com/Scene-Collective/ps4-payload-sdk ~/ps4-payload-sdk && cd "$_"
-        #chmod +x install.sh
-        sudo bash ./install.sh
-        echo PS4SDK=/opt/ps4sdk >> $GITHUB_ENV
-
     - name: Make
       run: |
         cd bgft
@@ -30,4 +23,4 @@ jobs:
     - name: Push artifact
       uses: actions/upload-artifact@v3
       with:
-        path: bgft\*
+        path: bgft/
