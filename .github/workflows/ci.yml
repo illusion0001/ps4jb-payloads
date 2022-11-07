@@ -4,7 +4,7 @@ on: push
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
 
     - name: Checkout
@@ -12,10 +12,10 @@ jobs:
       with:
         submodules: recursive
 
-    - name: setup
-      run: choco install yasm
+    - name: Setup
+      run: sudo apt install yasm mingw-w64
 
-    - name: make
+    - name: Make
       run: |
         cd bgft
         make sender.exe
