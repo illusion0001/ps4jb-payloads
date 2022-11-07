@@ -3,8 +3,8 @@ all: payload.bin
 clean:
 	rm -f payload.elf payload.bin sender sender.exe
 
-#../lib/lib.a:
-#	cd ../lib; make
+../lib/lib.a:
+	cd ../lib; make
 
 payload.elf: ../lib/lib.a main.c
 	clang -g -mcmodel=small -isystem ../freebsd-headers -nostdinc -nostdlib -fno-stack-protector -static ../lib/lib.a main.c download.c ps4-libjbc/*.c -Wl,-gc-sections -o payload.elf -fPIE -ffreestanding
