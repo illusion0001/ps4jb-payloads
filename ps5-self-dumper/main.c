@@ -420,7 +420,8 @@ void dump_dirents(struct my_dirent* dirents, int sock)
         size_t l = 0;
         while(path[l])
             l++;
-        static const char suffixes[5][11] = {".self", ".sprx", ".elf", ".prx", "/eboot.bin"};
+        // from EchoStretch
+        static const char suffixes[5][11] = {".prx", ".self", ".sprx", ".elf", "/eboot.bin"};
         int ok = 0;
         for(int i = 0; i < 5 && !ok; i++)
         {
