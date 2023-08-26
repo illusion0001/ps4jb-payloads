@@ -32,5 +32,5 @@ jobs:
       with:
         name: payloads
         path: |
-          ./**/payload.bin
-          ./**/payload.elf
+          ./**/*.bin
+          ./**/*.elf
