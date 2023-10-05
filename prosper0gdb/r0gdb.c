@@ -1393,7 +1393,7 @@ static void trace_cryptasync(uint64_t* regs)
 
 static uint64_t other_thread;
 
-static void* other_thread_fn(void*)
+static void* other_thread_fn(void* unused)
 {
     other_thread = get_thread();
     //((int(*)())dlsym((void*)0x2001, "sceKernelSleep"))(10000000);
