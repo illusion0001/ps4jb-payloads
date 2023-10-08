@@ -347,6 +347,10 @@ static void patch_shellcore(void)
         {shellcore_base+0x1a12d1, "\xe8\xea\x88\x47\x00\x31\xc9\xff\xc1\xe9\xf4\x02\x00\x00", 14},
         {shellcore_base+0x1a15d3, "\x83\xf8\x02\x0f\x43\xc1\xe9\x29\xfa\xff\xff", 11},
         {shellcore_base+0x1a0fe5, "\xe9\xe7\x02\x00\x00", 5},
+        // `/data/` mount
+        // may need `/user/devbin` + `/user/devlog/app` created
+        {shellcore_base+0x466cda, "\xb8\x01\x00\x00\x00", 5},
+        {shellcore_base+0x466d2a, "\x90\x90", 2},
     };
     for(int i = 0; i < sizeof(patches) / sizeof(*patches); i++)
     {
