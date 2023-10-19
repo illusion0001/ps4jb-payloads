@@ -87,6 +87,27 @@ void scan_offsets() {
     OFFSET(copyout);
     OFFSET(crypt_message_resolve);
 #undef OFFSET
+
+#define PARASITE(x) \
+    printf(#x "\n"); \
+    scan_offset(x, &instrs_it)
+    PARASITE(kdata_base-0x80284d);
+    PARASITE(kdata_base-0x3889ac);
+    PARASITE(kdata_base-0x38896c);
+    /* fself parasites */
+    PARASITE(kdata_base-0x2cc716);
+    PARASITE(kdata_base-0x2cd28a);
+    PARASITE(kdata_base-0x2cd150);
+    PARASITE(kdata_base-0x2cce73);
+    PARASITE(kdata_base-0x2ccbfd);
+    PARASITE(kdata_base-0x2cc882);
+    PARASITE(kdata_base-0x990b10);
+    PARASITE(kdata_base-0x2ccd36);
+    /* unsorted parasites */
+    PARASITE(kdata_base-0x479a0e);
+    PARASITE(kdata_base-0x479a0e);
+#undef PARASITE
+
     instrs_send(PC_IP, PC_DUMP_PORT, instrs, instrs_it - instrs);
 }
 
