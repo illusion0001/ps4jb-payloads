@@ -12,7 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define PC_IP "192.168.0.20"
+#define PC_IP "192.168.1.123"
 #define PC_LOG_PORT 5655
 #define PC_DUMP_PORT 5656
 
