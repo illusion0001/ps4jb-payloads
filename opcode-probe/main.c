@@ -17,6 +17,8 @@
 #define PC_DUMP_PORT 5656
 
 extern uint64_t kdata_base;
+static uint64_t kdata_base_phys;
+static uint64_t kdata_base_dmap;
 
 const uint64_t skip_offset_list[] = {0x0};
 
@@ -28,7 +30,8 @@ int record_ktext_instr(uint64_t addr, struct instr_entry* test_entry) {
             return -1;
         }
     }
-    get_instruction_signature(addr, test_entry);
+    uint64_t dmap_addr = kdata_base_dmap - offset;
+    get_instruction_signature(dmap_addr, test_entry);
     return 0;
 }
 
@@ -204,6 +207,10 @@ int main(void* ds, int a, int b, uintptr_t c, uintptr_t d)
     }
     r0gdb_init(ds, a, b, c, d);
     //dbg_enter();
+
+    kdata_base_phys = ~0xffffffffc0000000ULL & kdata_base;  // sometimes wrong?
+    kdata_base_dmap = kdata_base_phys + 0xffff800000000000;
+    printf("kdata_base = %zx, kdata_base_phys = %zx, kdata_base_dmap = %zx\n", kdata_base, kdata_base_phys, kdata_base_dmap);
 
     ret = try_alloc_fixed_mem();
     printf("alloc_fixed_mem returned %d\n", ret);
