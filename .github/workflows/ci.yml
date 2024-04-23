@@ -23,10 +23,6 @@ jobs:
       working-directory: ps5-kstuff
       run: make
 
-    - name: Make gdb_stub
-      working-directory: gdb_stub
-      run: make
-
     - name: Upload artifacts
       uses: actions/upload-artifact@main
       with:
