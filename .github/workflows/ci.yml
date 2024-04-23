@@ -1,0 +1,36 @@
+name: Build
+
+on: [ push, pull_request ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@main
+      with:
+        submodules: recursive
+
+    - name: Setup
+      run: sudo apt install yasm
+
+    - name: Make ps5-self-dumper
+      working-directory: ps5-self-dumper
+      run: make
+
+    - name: Make ps5-kstuff
+      working-directory: ps5-kstuff
+      run: make
+
+    - name: Make gdb_stub
+      working-directory: gdb_stub
+      run: make
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@main
+      with:
+        name: payloads
+        path: |
+          ./**/*.bin
+          ./**/*.elf
