@@ -524,14 +524,14 @@ int main(void* ds, int a, int b, uintptr_t c, uintptr_t d)
         close(sock);
         return 2;
     }
-    notify("waiting for connection\n");
+    notify("waiting for connection");
     int sock2 = accept(sock, 0, 0);
     if(sock2 < 0)
     {
         close(sock);
         return 3;
     }
-    notify("connected\n");
+    notify("connected");
     const char* paths_pfsmnt[] = {
         "/mnt/sandbox/pfsmnt",
         0
@@ -553,7 +553,7 @@ int main(void* ds, int a, int b, uintptr_t c, uintptr_t d)
         buf = tree(paths);
     }
     dump_dirents((void*)buf.buf, sock2);
-    notify("all done\n");
+    notify("all done");
     close(sock2);
     kill(getpid(), SIGKILL);
     return 0;
