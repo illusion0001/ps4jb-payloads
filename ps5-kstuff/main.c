@@ -449,12 +449,14 @@ int main(void* ds, int a, int b, uintptr_t c, uintptr_t d)
         return 1;
     }
     size_t desc_size = 0;
+    /*
     struct parasite_desc* desc = get_parasites(&desc_size);
     if(!desc)
     {
         notify("your firmware is not supported (ps5-kstuff)");
         return 1;
     }
+    */
     uint64_t percpu_ist4[NCPUS];
     for(int cpu = 0; cpu < NCPUS; cpu++)
         copyout(&percpu_ist4[cpu], TSS(cpu)+28+4*8, 8);
@@ -481,12 +483,14 @@ int main(void* ds, int a, int b, uintptr_t c, uintptr_t d)
     uint64_t uelf_virt_base = (find_empty_pml4_index(0) << 39) | (-1ull << 48);
     uint64_t dmem_virt_base = (find_empty_pml4_index(1) << 39) | (-1ull << 48);
     shared_area = virt2phys(shared_area) + dmem_virt_base;
+    /*
     uint64_t uelf_parasite_desc = (uint64_t)kmalloc(8192);
     uelf_parasite_desc = ((uelf_parasite_desc - 1) | 4095) + 1;
     for(int i = 0; i < desc->lim_total; i++)
         desc->parasites[i].address += kdata_base;
     kmemcpy((void*)uelf_parasite_desc, desc, desc_size);
     uelf_parasite_desc = virt2phys(uelf_parasite_desc) + dmem_virt_base;
+    */
     volatile int zero = 0; //hack to force runtime calculation of string pointers
     const char* symbols[] = {
         "dmem"+zero,
@@ -629,7 +633,7 @@ int main(void* ds, int a, int b, uintptr_t c, uintptr_t d)
     gdb_remote_syscall("write", 3, 0, (uintptr_t)1, (uintptr_t)"done\npatching app.db... ", (uintptr_t)24);
     patch_app_db();
     gdb_remote_syscall("write", 3, 0, (uintptr_t)1, (uintptr_t)"done\n", (uintptr_t)5);
-#ifndef DEBUG
+#if 1
     notify("ps5-kstuff successfully loaded");
     return 0;
 #endif
