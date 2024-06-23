@@ -16,6 +16,7 @@ jobs:
       run: sudo apt install yasm
 
     - name: Make ps5-self-dumper
+      if: false
       working-directory: ps5-self-dumper
       run: make
 
