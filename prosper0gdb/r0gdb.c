@@ -1,3 +1,4 @@
+#define sysctl __sysctl
 #include "../gdb_stub/dbg.h"
 #include "../gdb_stub/trap_state.h"
 #include <stdarg.h>
@@ -11,12 +12,34 @@
 #include <sys/ucontext.h>
 #include <sys/cpuset.h>
 #include <sys/syscall.h>
+#include <sys/sysctl.h>
+#include <sys/thr.h>
 #include <machine/sysarch.h>
 #include <signal.h>
 #include <netinet/in.h>
 #include <netinet/ip6.h>
 #include "r0gdb.h"
 #include "offsets.h"
+
+#ifndef PS5KEK
+
+#define gettid() (*((int*(*)(void))dlsym((void*)0x2001, "pthread_self"))())
+#define WRAPPER2(name, sym) ((typeof(&name))dlsym((void*)0x2001, #sym))
+#define WRAPPER(name) WRAPPER2(name, name)
+
+#else
+
+static inline int gettid(void)
+{
+    long tid;
+    thr_self(&tid);
+    return tid;
+}
+
+#define WRAPPER(name) ({ void* ans; asm volatile("lea " #name "(%%rip), %0":"=r"(ans)); ans; })
+#define WRAPPER2(name, sym) WRAPPER(name)
+
+#endif
 
 //#define CPU_2 //TODO: run on any cpu
 
@@ -115,6 +138,8 @@ ssize_t copyout(void* dst, uint64_t src, size_t count)
     if(kwrite20(rpipe+15, (src<<8)|0x40, src>>56, 0))
         *(void* volatile*)0;
     getpid(); //leaks td_retval offset
+    volatile double x = 1; //makes sure PCB_FPUINITDONE is set
+    x += 1;
     return read(the_pipe[0], dst, count);
 }
 
@@ -131,7 +156,7 @@ void* dlsym(void*, const char*);
 
 static uint64_t get_thread(void)
 {
-    int tid = *((int*(*)(void))dlsym((void*)0x2001, "pthread_self"))();
+    int tid = gettid();
     for(uint64_t thr = kread8(proc+16); thr; thr = kread8(thr+16))
         if((int)kread8(thr+0x9c) == tid)
             return thr;
@@ -160,16 +185,16 @@ static void bind_to_all_available_cpus(void)
     for(int i = 0; i < 128; i++)
     {
         uint8_t affinity[16] = {0};
-        cpuset_getaffinity(3, 1, *((int*(*)())dlsym((void*)0x2001, "pthread_self"))(), 16, (void*)affinity);
+        cpuset_getaffinity(3, 1, gettid(), 16, (void*)affinity);
         affinity[i / 8] |= 1 << (i % 8);
-        cpuset_setaffinity(3, 1, *((int*(*)())dlsym((void*)0x2001, "pthread_self"))(), 16, (void*)affinity);
+        cpuset_setaffinity(3, 1, gettid(), 16, (void*)affinity);
     }
 }
 
 static int bind_to_some_cpu(int skip)
 {
     uint8_t affinity[16] = {0};
-    cpuset_getaffinity(3, 1, *((int*(*)())dlsym((void*)0x2001, "pthread_self"))(), 16, (void*)affinity);
+    cpuset_getaffinity(3, 1, gettid(), 16, (void*)affinity);
     int i = 0;
     while(i < 16 && !affinity[i])
         i++;
@@ -185,7 +210,7 @@ static int bind_to_some_cpu(int skip)
     i++;
     while(i < 16)
         affinity[i++] = 0;
-    return cpuset_setaffinity(3, 1, *((int*(*)())dlsym((void*)0x2001, "pthread_self"))(), 16, (void*)affinity);
+    return cpuset_setaffinity(3, 1, gettid(), 16, (void*)affinity);
 }
 
 __attribute__((optimize(3)))
@@ -243,6 +268,13 @@ static int set_sigaltstack(void)
     return 0;
 }
 
+static void getpid_for_smsw_ax(void)
+{
+    volatile double x = 1;
+    x += 1;
+    getpid();
+}
+
 extern int in_signal_handler;
 int gdbstub_main_loop(struct trap_state* ts, ssize_t* result, int* ern);
 void run_in_kernel(struct regs*);
@@ -267,7 +299,7 @@ void r0gdb_setup(int do_swapgs)
 #ifdef CPU_2
     //pin ourselves to cpu 2 (13 in apic order)
     char affinity[16] = {4};
-    cpuset_setaffinity(3, 1, *((int*(*)())dlsym((void*)0x2001, "pthread_self"))(), 16, (void*)affinity);
+    cpuset_setaffinity(3, 1, gettid(), 16, (void*)affinity);
 #endif
     //resolve addresses
     iret = offsets.doreti_iret;
@@ -797,7 +829,7 @@ static void fix_mprotect(uint64_t* regs)
 int mprotect20(void* addr, size_t sz, int prot)
 {
     r0gdb_instrument(0);
-    int(*p_mprotect)(void*, size_t, int) = dlsym((void*)0x2001, "mprotect");
+    int(*p_mprotect)(void*, size_t, int) = WRAPPER(mprotect);
     trace_prog = fix_mprotect;
     set_trace();
     int ans = p_mprotect(addr, sz, prot);
@@ -817,7 +849,7 @@ static void fix_mmap_self(uint64_t* regs)
 void* mmap20(void* addr, size_t sz, int prot, int flags, int fd, off_t offset)
 {
     r0gdb_instrument(0);
-    void*(*p_mmap)(void*, size_t, int, int, int, off_t) = dlsym((void*)0x2001, "mmap");
+    void*(*p_mmap)(void*, size_t, int, int, int, off_t) = WRAPPER(mmap);
     trace_prog = fix_mmap_self;
     set_trace();
     void* ans = p_mmap(addr, sz, prot, flags, fd, offset);
@@ -844,7 +876,7 @@ int sigaction20(int sig, const struct sigaction* neww, struct sigaction* oldd)
     if(sig != SIGKILL && sig != SIGSTOP)
         return sigaction(sig, neww, oldd);
     r0gdb_instrument(0);
-    int(*p_write)(int, const void*, void*) = dlsym((void*)0x2001, "_write");
+    int(*p_write)(int, const void*, void*) = WRAPPER2(write, _write);
     trace_prog = fix_sigaction_17_9;
     if(!sys_write)
         kmemcpy(&sys_write, (void*)(offsets.sysents + 48*SYS_write + 8), 8);
@@ -880,7 +912,7 @@ static void filter_dump_authinfo(uint64_t* regs)
 int get_self_auth_info_20(const char* path, void* buf)
 {
     r0gdb_instrument(0);
-    int(*p_get_self_auth_info)(const char* path, void* buf) = dlsym((void*)0x2001, "get_self_auth_info");
+    int(*p_get_self_auth_info)(const char* path, void* buf) = (void*)WRAPPER(get_self_auth_info);
     trace_prog = filter_dump_authinfo;
     authinfo_dumped = 0;
     set_trace();
@@ -908,7 +940,7 @@ static void fix_mdbg_call(uint64_t* regs)
 int mdbg_call_20(void* a, void* b, void* c)
 {
     r0gdb_instrument(0);
-    int(*p_write)(void*, void*, void*) = dlsym((void*)0x2001, "_write");
+    int(*p_write)(void*, void*, void*) = WRAPPER2(write, _write);
     trace_prog = fix_mdbg_call;
     if(!sys_write)
         kmemcpy(&sys_write, (void*)(offsets.sysents + 48*SYS_write + 8), 8);
@@ -963,7 +995,7 @@ uint64_t r0gdb_kfncall(uint64_t fn, ...)
     va_end(args);
     fncall_fn = fn;
     r0gdb_instrument(0);
-    void(*p_getpid)(void) = (void*)dlsym((void*)0x2001, "getpid");
+    void(*p_getpid)(void) = WRAPPER(getpid);
     trace_prog = getpid_to_fncall;
     if(!sys_getpid)
         kmemcpy(&sys_getpid, (void*)(offsets.sysents + 48*SYS_getpid + 8), 8);
@@ -1558,4 +1590,14 @@ int r0gdb_init(void* ds, int a, int b, uintptr_t c, uintptr_t d)
         return 0;
     }
     return -1;
+}
+
+//kernel_get_fw_version from sb's sdk
+uint32_t r0gdb_get_fw_version(void)
+{
+    int mib[2] = {1, 46};
+    unsigned long size = sizeof(mib);
+    unsigned int version = 0;
+    sysctl(mib, 2, &version, &size, 0, 0);
+    return version;
 }

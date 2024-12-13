@@ -37,6 +37,7 @@ def get_syscalls():
 
 print('section .text')
 print('use64')
+print('global p_syscall')
 print()
 
 for idx, name in sorted(get_syscalls().items()):
@@ -73,11 +74,12 @@ push r8
 push r9
 push rax
 push rax
-push rax
+mov r10, [rel addr__dynlib_dlsym]
+push r10
 mov edi, 0x2001
 lea rsi, [rel getpid_str]
 mov rdx, rsp
-call [rel addr__dynlib_dlsym]
+call r10
 pop r10
 pop rax
 pop rax
@@ -127,17 +129,17 @@ section .rodata.error_str
 error_str:
 db "__error", 0
 
-section .data.addr__dynlib_dlsym
+section .bss.addr__dynlib_dlsym
 global addr__dynlib_dlsym
 addr__dynlib_dlsym:
 dq 0
 
-section data.addr____error
+section .bss.addr____error
 global addr____error
 addr____error:
 dq 0
 
-section .data.p_syscall
+section .bss.p_syscall
 p_syscall:
 dq 0\
 ''')
