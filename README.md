@@ -1,1 +1,1 @@
-Starte of readme
+Start of readme
